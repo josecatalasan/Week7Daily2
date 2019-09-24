@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".view.activities.MapsActivity"
     android:layout_width="match_parent"
@@ -11,25 +11,33 @@
 
     <EditText
         android:id="@+id/etAddress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:inputType="text"
         android:textAlignment="center"
-        android:layout_margin="8dp"
-        android:background="@null"
-        android:hint="WHERE DO YOU WISH TO SEE"/>
+        android:hint="WHERE DO YOU WISH TO SEE"
+        android:background="@drawable/address_input_background"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/btnMoveToLocation"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/btnMoveToLocation"/>
 
     <Button
         android:id="@+id/btnMoveToLocation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="SHOW ME MY DESTINY"
-        android:onClick="onClick"/>
+        android:layout_width="64dp"
+        android:layout_height="48dp"
+        android:text="@string/find_button"
+        android:onClick="onClick"
+        android:background="@drawable/address_input_background"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
 
     <fragment
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        app:layout_constraintTop_toBottomOf="@+id/etAddress"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

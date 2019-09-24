@@ -20,7 +20,7 @@ import android.view.inputmethod.InputMethodManager
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
 
     private lateinit var map: GoogleMap
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
@@ -44,33 +44,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
         //map.mapType = GoogleMap.MAP_TYPE_HYBRID
     }
 
-    private fun displayLocationOnMap(latLng : LatLng, title : String){
+    private fun displayLocationOnMap(latLng : LatLng, title : String?){
         var marker = map.addMarker(MarkerOptions().position(latLng).title(title).draggable(true))
         map.moveCamera(CameraUpdateFactory.newLatLng(latLng))
         map.animateCamera(CameraUpdateFactory.zoomTo(13.0f))
     }
 
     //Geocoding
-    fun getLocationByAddress(address : String) : LatLng {
+    fun getLocationByAddress(address : String) : LatLng? {
         val geocoder = Geocoder(this)
-        val addressResult = geocoder.getFromLocationName(address, 1)[0] // check for empty result
-        return LatLng(addressResult.latitude, addressResult.longitude)
+        val addressResult = geocoder.getFromLocationName(address, 1)
+        // check for empty result
+        if(addressResult.size == 0)
+            return null
+        return LatLng(addressResult[0].latitude, addressResult[0].longitude)
     }
 
     //Reverse Geocoding
     fun getLocationByLatLng(coordinates : LatLng) : String{
         val geocoder = Geocoder(this)
-        val addressResult = geocoder.getFromLocation(coordinates.latitude, coordinates.longitude, 1)[0] //check for empty result
+        val addressResult = geocoder.getFromLocation(coordinates.latitude, coordinates.longitude, 1) //check for empty result
 
-        return addressResult.getAddressLine(0)
+        return addressResult[0].getAddressLine(0)
     }
 
     fun onClick(view: View) {
         val address : String = etAddress.text.toString()
-        val retrievedLatLng : LatLng
+        val retrievedLatLng : LatLng?
 
         if(address.isNotEmpty()){
-            retrievedLatLng = getLocationByAddress(address)
+            retrievedLatLng = getLocationByAddress(address) ?: return
             displayLocationOnMap(retrievedLatLng, getLocationByLatLng(retrievedLatLng))
         }
         hideKeyboard()
@@ -80,7 +83,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
         val view = this.currentFocus
         view?.let { v ->
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.let { it.hideSoftInputFromWindow(v.windowToken, 0) }
+            imm?.hideSoftInputFromWindow(v.windowToken, 0)
         }
     }
 }
