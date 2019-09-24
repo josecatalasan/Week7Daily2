@@ -1,0 +1,21 @@
+<resources>
+    <!--
+
+    To get one, follow this link, follow the directions and press "Create" at the end:
+
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=F6:57:C8:69:0F:A4:71:18:29:99:83:36:9D:A4:C8:F3:FB:C6:C7:83%3Bcom.example.week7daily2navigation
+
+    You can also add your credentials to an existing key, using these values:
+
+    Package name:
+    F6:57:C8:69:0F:A4:71:18:29:99:83:36:9D:A4:C8:F3:FB:C6:C7:83
+
+    SHA-1 certificate fingerprint:
+    F6:57:C8:69:0F:A4:71:18:29:99:83:36:9D:A4:C8:F3:FB:C6:C7:83
+
+    Alternatively, follow the directions here:
+    https://developers.google.com/maps/documentation/android/start#get-key
+
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyBP61aylgewfLVV87xB6S9E3c1AL1PAu8g</string>
+</resources>
