@@ -2,4 +2,10 @@
     <string name="app_name">Week7Daily2Navigation</string>
     <string name="title_activity_maps">Map</string>
     <string name="find_button">FIND</string>
+    <string name="radio_normal">Normal</string>
+    <string name="radio_hybrid">Hybrid</string>
+    <string name="radio_satellite">Satellite</string>
+    <string name="radio_terrain">Terrain</string>
+    <string name="radio_none">None</string>
+    <string name="address_input_hint">Enter an address</string>
 </resources>

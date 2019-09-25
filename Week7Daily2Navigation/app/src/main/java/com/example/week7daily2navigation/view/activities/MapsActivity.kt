@@ -10,12 +10,13 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.view.inputmethod.InputMethodManager
+import android.widget.RadioGroup
+import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.model.*
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
 
@@ -35,17 +36,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
                 override fun onMarkerDragEnd(p0: Marker?) {}
                 override fun onMarkerDrag(p0: Marker?) {}
         })
-
         //Center camera on USA
         map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(38.0,-97.0)))
         map.moveCamera(CameraUpdateFactory.zoomTo(3.0f))
-
-        //set Map properties
-        //map.mapType = GoogleMap.MAP_TYPE_HYBRID
     }
 
     private fun displayLocationOnMap(latLng : LatLng, title : String?){
-        var marker = map.addMarker(MarkerOptions().position(latLng).title(title).draggable(true))
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.cat_from_below)
+
+        var marker = map.addMarker(MarkerOptions().position(latLng).title(title).draggable(true).icon(BitmapDescriptorFactory.fromBitmap(bitmap)))
         map.moveCamera(CameraUpdateFactory.newLatLng(latLng))
         map.animateCamera(CameraUpdateFactory.zoomTo(13.0f))
     }
@@ -79,11 +78,38 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
         hideKeyboard()
     }
 
+    fun changeMap(view: View) {
+        //set Map properties NORMAL, HYBRID  SATELLITE, TERRAIN, NONE
+        when(view.id){
+            R.id.radioNormal -> {map.mapType = GoogleMap.MAP_TYPE_NORMAL; changeColors(false)}
+            R.id.radioHybrid -> {map.mapType = GoogleMap.MAP_TYPE_HYBRID; changeColors(true)}
+            R.id.radioSatellite -> {map.mapType = GoogleMap.MAP_TYPE_SATELLITE; changeColors(true)}
+            R.id.radioTerrain -> {map.mapType = GoogleMap.MAP_TYPE_TERRAIN; changeColors(false)}
+            R.id.radioNone -> {map.mapType = GoogleMap.MAP_TYPE_NONE; changeColors(false)}
+        }
+    }
+
     private fun hideKeyboard() {
         val view = this.currentFocus
         view?.let { v ->
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             imm?.hideSoftInputFromWindow(v.windowToken, 0)
+        }
+    }
+
+    private fun changeColors(white: Boolean) {
+        if (white) {
+            radioNormal.setTextColor(ContextCompat.getColor(this,R.color.white))
+            radioHybrid.setTextColor(ContextCompat.getColor(this,R.color.white))
+            radioSatellite.setTextColor(ContextCompat.getColor(this,R.color.white))
+            radioTerrain.setTextColor(ContextCompat.getColor(this,R.color.white))
+            radioNone.setTextColor(ContextCompat.getColor(this,R.color.white))
+        } else { //black
+            radioNormal.setTextColor(ContextCompat.getColor(this,R.color.black))
+            radioHybrid.setTextColor(ContextCompat.getColor(this,R.color.black))
+            radioSatellite.setTextColor(ContextCompat.getColor(this,R.color.black))
+            radioTerrain.setTextColor(ContextCompat.getColor(this,R.color.black))
+            radioNone.setTextColor(ContextCompat.getColor(this,R.color.black))
         }
     }
 }
