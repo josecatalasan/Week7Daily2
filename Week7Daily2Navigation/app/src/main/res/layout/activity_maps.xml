@@ -22,6 +22,7 @@
         android:inputType="text"
         android:textAlignment="center"
         android:hint="@string/address_input_hint"
+        android:importantForAutofill="no"
         android:background="@drawable/address_input_background"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnMoveToLocation"

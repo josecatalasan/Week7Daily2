@@ -30,6 +30,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val PERMISSION_INDEX_ID = 101
+    private val _displayLocationZoomLevel = 15.0f
+    private val _myLocationZoomLevel = 16.0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +66,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
 
         var marker = map.addMarker(MarkerOptions().position(latLng).title(title).draggable(true).icon(BitmapDescriptorFactory.fromBitmap(bitmap)))
         map.moveCamera(CameraUpdateFactory.newLatLng(latLng))
-        map.animateCamera(CameraUpdateFactory.zoomTo(13.0f))
+        map.animateCamera(CameraUpdateFactory.zoomTo(_displayLocationZoomLevel))
     }
 
     //Geocoding
@@ -143,7 +145,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         fabMyLocation.setOnClickListener {
             fusedLocationClient.lastLocation.addOnSuccessListener{
                 map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude,it.longitude)))
-                map.animateCamera(CameraUpdateFactory.zoomTo(13.0f))
+                map.animateCamera(CameraUpdateFactory.zoomTo(_myLocationZoomLevel))
             }}
 
         //open Google Navigation app to the current inputted address: google.navigation:q=latitude,longitude
