@@ -13,8 +13,10 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import kotlinx.android.synthetic.main.activity_maps.*
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -32,17 +34,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
-        //ask for location permission
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_INDEX_ID)
+
+        //set up functions
+        askForPermissions()
+        setFabListeners()
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
-        fabMyLocation.setOnClickListener {
-            fusedLocationClient.lastLocation.addOnSuccessListener{
-                map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude,it.longitude)))
-                map.animateCamera(CameraUpdateFactory.zoomTo(13.0f))
-            }}
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -59,6 +58,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
 
     }
 
+    // Google Map functions
     private fun displayLocationOnMap(latLng : LatLng, title : String?){
         val bitmap = BitmapFactory.decodeResource(resources, R.drawable.cat_from_below)
 
@@ -68,7 +68,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
     }
 
     //Geocoding
-    fun getLocationByAddress(address : String) : LatLng? {
+    private fun getLocationByAddress(address : String) : LatLng? {
         val geocoder = Geocoder(this)
         val addressResult = geocoder.getFromLocationName(address, 1)
         // check for empty result
@@ -78,14 +78,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
     }
 
     //Reverse Geocoding
-    fun getLocationByLatLng(coordinates : LatLng) : String{
+    private fun getLocationByLatLng(coordinates : LatLng) : String{
         val geocoder = Geocoder(this)
         val addressResult = geocoder.getFromLocation(coordinates.latitude, coordinates.longitude, 1) //check for empty result
 
         return addressResult[0].getAddressLine(0)
     }
 
-    fun onClick(view: View) {
+    //button to search for address
+    fun onFindAddress(view: View) {
         val address : String = etAddress.text.toString()
         val retrievedLatLng : LatLng?
 
@@ -96,17 +97,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         hideKeyboard()
     }
 
-    fun changeMap(view: View) {
+    //radio buttons to change map type
+    fun onChangeMap(view: View) {
         //set Map properties NORMAL, HYBRID  SATELLITE, TERRAIN, NONE
         when(view.id){
-            R.id.radioNormal -> {map.mapType = GoogleMap.MAP_TYPE_NORMAL; changeColors(false)}
-            R.id.radioHybrid -> {map.mapType = GoogleMap.MAP_TYPE_HYBRID; changeColors(true)}
-            R.id.radioSatellite -> {map.mapType = GoogleMap.MAP_TYPE_SATELLITE; changeColors(true)}
-            R.id.radioTerrain -> {map.mapType = GoogleMap.MAP_TYPE_TERRAIN; changeColors(false)}
-            R.id.radioNone -> {map.mapType = GoogleMap.MAP_TYPE_NONE; changeColors(false)}
+            R.id.radioNormal ->     {map.mapType = GoogleMap.MAP_TYPE_NORMAL; changeRadioTextColors(false)}
+            R.id.radioHybrid ->     {map.mapType = GoogleMap.MAP_TYPE_HYBRID; changeRadioTextColors(true)}
+            R.id.radioSatellite ->  {map.mapType = GoogleMap.MAP_TYPE_SATELLITE; changeRadioTextColors(true)}
+            R.id.radioTerrain ->    {map.mapType = GoogleMap.MAP_TYPE_TERRAIN; changeRadioTextColors(false)}
+            R.id.radioNone ->       {map.mapType = GoogleMap.MAP_TYPE_NONE; changeRadioTextColors(false)}
         }
     }
 
+    //helper functions
     private fun hideKeyboard() {
         val view = this.currentFocus
         view?.let { v ->
@@ -115,7 +118,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         }
     }
 
-    private fun changeColors(white: Boolean) {
+    private fun changeRadioTextColors(white: Boolean) {
         if (white) {
             radioNormal.setTextColor(ContextCompat.getColor(this,R.color.white))
             radioHybrid.setTextColor(ContextCompat.getColor(this,R.color.white))
@@ -131,6 +134,38 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         }
     }
 
+    private fun askForPermissions(){
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_INDEX_ID)
+    }
+
+    private fun setFabListeners(){
+        // display current location
+        fabMyLocation.setOnClickListener {
+            fusedLocationClient.lastLocation.addOnSuccessListener{
+                map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude,it.longitude)))
+                map.animateCamera(CameraUpdateFactory.zoomTo(13.0f))
+            }}
+
+        //open Google Navigation app to the current inputted address: google.navigation:q=latitude,longitude
+        fabLaunchNavigation.setOnClickListener {
+            hideKeyboard()
+            val address : String = etAddress.text.toString()
+            val retrievedLatLng : LatLng?
+
+            if(address.isNotEmpty()){
+                retrievedLatLng = getLocationByAddress(address) //can return null
+                if(retrievedLatLng != null) {
+                    val gmmIntentUri =
+                        Uri.parse("google.navigation:q=" + retrievedLatLng.latitude + "," + retrievedLatLng.longitude) //get current address
+                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                    mapIntent.setPackage("com.google.android.apps.maps")
+                    startActivity(mapIntent)
+                }
+            }
+        }
+    }
+
+    //interface to respond to permission requests
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (requestCode == PERMISSION_INDEX_ID) {
             if (permissions.size == 1 &&
@@ -146,6 +181,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         }
     }
 
+    //interface for my location services
     override fun onMyLocationButtonClick(): Boolean {
         return false
     }
