@@ -21,6 +21,7 @@
         android:layout_height="48dp"
         android:inputType="text"
         android:textAlignment="center"
+        android:layout_margin="4dp"
         android:hint="@string/address_input_hint"
         android:background="@drawable/address_input_background"
         app:layout_constraintTop_toTopOf="parent"
@@ -82,5 +83,18 @@
             android:onClick="changeMap"/>
 
     </RadioGroup>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabMyLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:src="@drawable/map_my_location"
+        android:visibility="visible"
+        app:maxImageSize="32dp"
+        app:backgroundTint="@color/white"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

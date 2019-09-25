@@ -1,5 +1,6 @@
 package com.example.week7daily2navigation.view.activities
 
+import android.Manifest
 import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -12,21 +13,36 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import kotlinx.android.synthetic.main.activity_maps.*
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.view.inputmethod.InputMethodManager
-import android.widget.RadioGroup
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.*
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, GoogleMap.OnMyLocationButtonClickListener{
 
     private lateinit var map: GoogleMap
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val PERMISSION_INDEX_ID = 101
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+        //ask for location permission
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_INDEX_ID)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        fabMyLocation.setOnClickListener {
+            fusedLocationClient.lastLocation.addOnSuccessListener{
+                map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude,it.longitude)))
+                map.animateCamera(CameraUpdateFactory.zoomTo(13.0f))
+            }}
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -36,9 +52,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
                 override fun onMarkerDragEnd(p0: Marker?) {}
                 override fun onMarkerDrag(p0: Marker?) {}
         })
+        map.setOnMyLocationButtonClickListener(this)
         //Center camera on USA
         map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(38.0,-97.0)))
         map.moveCamera(CameraUpdateFactory.zoomTo(3.0f))
+
     }
 
     private fun displayLocationOnMap(latLng : LatLng, title : String?){
@@ -111,5 +129,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
             radioTerrain.setTextColor(ContextCompat.getColor(this,R.color.black))
             radioNone.setTextColor(ContextCompat.getColor(this,R.color.black))
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == PERMISSION_INDEX_ID) {
+            if (permissions.size == 1 &&
+                permissions[0] == Manifest.permission.ACCESS_FINE_LOCATION &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
+                map.isMyLocationEnabled = true
+            } else {
+                // Permission was denied. Display an error message.
+                Toast.makeText(this, "My Location Permission Denied.", Toast.LENGTH_SHORT).show()
+                fabMyLocation.hide()
+            }
+        }
+    }
+
+    override fun onMyLocationButtonClick(): Boolean {
+        return false
     }
 }
