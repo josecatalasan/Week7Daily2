@@ -1,6 +1,7 @@
 package com.example.week7daily2navigation.view.activities
 
 import android.Manifest
+import android.app.PendingIntent
 import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -21,29 +22,42 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.*
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, GoogleMap.OnMyLocationButtonClickListener{
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener{
 
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var geofencingClient: GeofencingClient
+
+    var geofenceList = ArrayList<Geofence>()
+
     private val PERMISSION_INDEX_ID = 101
     private val _displayLocationZoomLevel = 15.0f
     private val _myLocationZoomLevel = 16.0f
+
+    private val geofencePendingIntent: PendingIntent by lazy {
+        val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // addGeofences() and removeGeofences().
+        PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        geofencingClient = LocationServices.getGeofencingClient(this)
+
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+        mapFragment.getMapAsync(this)
+
         //set up functions
         askForPermissions()
         setFabListeners()
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -67,6 +81,34 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         var marker = map.addMarker(MarkerOptions().position(latLng).title(title).draggable(true).icon(BitmapDescriptorFactory.fromBitmap(bitmap)))
         map.moveCamera(CameraUpdateFactory.newLatLng(latLng))
         map.animateCamera(CameraUpdateFactory.zoomTo(_displayLocationZoomLevel))
+
+        //add geofence to location
+        geofenceList.add(
+            Geofence.Builder().setRequestId(title)
+                .setCircularRegion(latLng.latitude, latLng.longitude, 150.0f)
+                .setExpirationDuration(1000*60*60)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .build()
+        )
+
+        geofencingClient?.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
+            addOnSuccessListener {
+                // Geofences added
+                // ...
+            }
+            addOnFailureListener {
+                // Failed to add geofences
+                // ...
+            }
+        }
+    }
+
+    //Geofencing
+    private fun getGeofencingRequest(): GeofencingRequest {
+        return GeofencingRequest.Builder().apply {
+            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            addGeofences(geofenceList)
+        }.build()
     }
 
     //Geocoding
@@ -144,8 +186,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         // display current location
         fabMyLocation.setOnClickListener {
             fusedLocationClient.lastLocation.addOnSuccessListener{
-                map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude,it.longitude)))
-                map.animateCamera(CameraUpdateFactory.zoomTo(_myLocationZoomLevel))
+                if(it != null) {
+                    map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude, it.longitude)))
+                    map.animateCamera(CameraUpdateFactory.zoomTo(_myLocationZoomLevel))
+                } else {
+                    Toast.makeText(this, "Location is NULL", Toast.LENGTH_SHORT)
+                }
             }}
 
         //open Google Navigation app to the current inputted address: google.navigation:q=latitude,longitude
@@ -172,8 +218,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, ActivityCompat.OnR
         if (requestCode == PERMISSION_INDEX_ID) {
             if (permissions.size == 1 &&
                 permissions[0] == Manifest.permission.ACCESS_FINE_LOCATION &&
-                grantResults[0] == PackageManager.PERMISSION_GRANTED
-            ) {
+                grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 map.isMyLocationEnabled = true
             } else {
                 // Permission was denied. Display an error message.
