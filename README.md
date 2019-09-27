@@ -28,3 +28,8 @@ The GoogleMap object allows for the MyLocation layer of the GoogleMap API to be 
 In order to start the navigation app for turn-by-turn directions, an Intent with an action is used. A URI defining the destination using Latitude and Longitude is passed to the intent, and the intent's package is set to launch the Navigation App. Finally, an activity using the intent with a defined action, uri and package is started to launch the Navigation application.
 
 <img src="https://github.com/josecatalasan/Week7Daily2Navigation/blob/master/screenshot9.png?raw=true" width="200"><img src="https://github.com/josecatalasan/Week7Daily2Navigation/blob/master/screenshot10.png?raw=true" width="200"><img src="https://github.com/josecatalasan/Week7Daily2Navigation/blob/master/screenshot11.png?raw=true" width="200"><img src="https://github.com/josecatalasan/Week7Daily2Navigation/blob/master/screenshot12.png?raw=true" width="200">
+
+### Creating Geofences
+Whenever the user searches for an address, a circular geofence with a radius of 30m is created at the found location. When the user's device enters the geofence, a Geofencing Event is sent and picked up by the GeofenceBroadcastReceiver. The broadcast receiver picks up the event and sends out a notification to let the user know that they have arrived at the location. Clicking the notification opens up the application.
+
+<img src="https://github.com/josecatalasan/Week7Daily2Navigation/blob/master/screenshot13.jpg?raw=true" width="200"><img src="https://github.com/josecatalasan/Week7Daily2Navigation/blob/master/screenshot14.jpg?raw=true" width="200">
