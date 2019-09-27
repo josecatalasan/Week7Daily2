@@ -1,6 +1,8 @@
 package com.example.week7daily2navigation.view.activities
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +20,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -31,7 +35,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var geofencingClient: GeofencingClient
 
-    var geofenceList = ArrayList<Geofence>()
+    private var geofenceList = ArrayList<Geofence>()
 
     private val PERMISSION_INDEX_ID = 101
     private val _displayLocationZoomLevel = 15.0f
@@ -39,8 +43,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
 
     private val geofencePendingIntent: PendingIntent by lazy {
         val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
-        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
-        // addGeofences() and removeGeofences().
         PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
@@ -57,7 +59,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
         //set up functions
         askForPermissions()
         setFabListeners()
+        setupNotificationChannel()
 
+    }
+
+    override fun onDestroy() {
+        geofencingClient.removeGeofences(geofencePendingIntent)?.run {
+            addOnSuccessListener {
+                Log.d("Geofence Removing", "Geofences removed.")
+            }
+            addOnFailureListener {
+                Log.d("Geofence Removing", "Geofences failed to be removed.")
+            }
+        }
+        super.onDestroy()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -79,31 +94,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
         val bitmap = BitmapFactory.decodeResource(resources, R.drawable.cat_from_below)
 
         var marker = map.addMarker(MarkerOptions().position(latLng).title(title).draggable(true).icon(BitmapDescriptorFactory.fromBitmap(bitmap)))
+        addGeofence(latLng, title)
+
         map.moveCamera(CameraUpdateFactory.newLatLng(latLng))
         map.animateCamera(CameraUpdateFactory.zoomTo(_displayLocationZoomLevel))
 
+    }
+
+    //Geofencing
+    private fun addGeofence(latLng : LatLng, title : String?){
         //add geofence to location
         geofenceList.add(
             Geofence.Builder().setRequestId(title)
-                .setCircularRegion(latLng.latitude, latLng.longitude, 150.0f)
+                .setCircularRegion(latLng.latitude, latLng.longitude, 30.0f)
                 .setExpirationDuration(1000*60*60)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
                 .build()
         )
 
-        geofencingClient?.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
+        geofencingClient.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
             addOnSuccessListener {
                 // Geofences added
-                // ...
+                Log.d("Geofence Adding", "Geofences added.")
             }
             addOnFailureListener {
                 // Failed to add geofences
-                // ...
+                Log.d("Geofence Adding", "Geofences NOT added.")
             }
         }
     }
 
-    //Geofencing
     private fun getGeofencingRequest(): GeofencingRequest {
         return GeofencingRequest.Builder().apply {
             setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
@@ -180,6 +200,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
 
     private fun askForPermissions(){
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_INDEX_ID)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSION_INDEX_ID)
+        }
     }
 
     private fun setFabListeners(){
@@ -190,7 +213,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
                     map.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude, it.longitude)))
                     map.animateCamera(CameraUpdateFactory.zoomTo(_myLocationZoomLevel))
                 } else {
-                    Toast.makeText(this, "Location is NULL", Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "Location is NULL", Toast.LENGTH_SHORT).show()
                 }
             }}
 
@@ -210,6 +233,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
                     startActivity(mapIntent)
                 }
             }
+        }
+    }
+
+    private fun setupNotificationChannel(){
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel =  NotificationChannel("geofence_event", "Geofence Event Notification", NotificationManager.IMPORTANCE_HIGH)
+            manager.createNotificationChannel(channel)
         }
     }
 
